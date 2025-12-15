@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Perspectives</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        input, select {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .emoji-display {
+            font-size: 100px;
+            margin: 30px 0;
+        }
+        .message {
+            color: #666;
+            margin: 10px 0;
+        }
+        .admin-panel {
+            display: none;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        .admin-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .person-list {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .person-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background: #f44336;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .delete-btn:hover {
+            background: #da190b;
+        }
+        .login-form {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <button class="admin-toggle" onclick="toggleAdmin()">🔐 Admin</button>
+
+    <h1>🎭 Emoji Perspectives</h1>
+    
+    <input type="text" id="nameInput" placeholder="Enter a name">
+    <button onclick="showEmoji()">Show Emoji</button>
+    
+    <div class="emoji-display" id="emojiDisplay"></div>
+    <div class="message" id="message"></div>
+
+    <!-- Admin Login -->
+    <div id="adminLogin" class="login-form hidden">
+        <h3>Admin Login</h3>
+        <input type="password" id="adminPassword" placeholder="Enter password">
+        <button onclick="login()">Login</button>
+        <div id="loginMessage" class="message"></div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="admin-panel">
+        <h2>Admin Panel</h2>
+        
+        <div style="margin: 20px 0;">
+            <h3>Add New Person</h3>
+            <input type="text" id="newName" placeholder="Name">
+            <input type="text" id="newEmoji" placeholder="Emoji (e.g., 😊)" maxlength="2">
+            <button onclick="addPerson()">Add</button>
+        </div>
+
+        <div class="person-list">
+            <h3>Current People</h3>
+            <div id="personList"></div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button onclick="logout()" style="background: #666;">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // CHANGE THIS PASSWORD to something secure!
+        const ADMIN_PASSWORD = "Secret";
+        
+        // Initialize with some example data
+        let perspectives = {
+            "john": "😊",
+            "sarah": "🎨",
+            "mike": "🚀",
+            "emma": "🌟",
+            "alex": "🎵"
+        };
+
+        let isAdminLoggedIn = false;
+
+        // Load data from localStorage if available
+        function loadData() {
+            const saved = localStorage.getItem('perspectives');
+            if (saved) {
+                perspectives = JSON.parse(saved);
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('perspectives', JSON.stringify(perspectives));
+        }
+
+        function showEmoji() {
+            const name = document.getElementById('nameInput').value.toLowerCase().trim();
+            const emojiDisplay = document.getElementById('emojiDisplay');
+            const message = document.getElementById('message');
+            
+            if (name === '') {
+                message.textContent = 'Please enter a name';
+                emojiDisplay.textContent = '';
+                return;
+            }
+            
+            const emoji = perspectives[name];
+            
+            if (emoji) {
+                emojiDisplay.textContent = emoji;
+                message.textContent = `${name.charAt(0).toUpperCase() + name.slice(1)}'s perspective`;
+            } else {
+                emojiDisplay.textContent = '❓';
+                message.textContent = 'Person not found';
+            }
+        }
+
+        function toggleAdmin() {
+            if (isAdminLoggedIn) {
+                document.getElementById('adminPanel').style.display = 
+                    document.getElementById('adminPanel').style.display === 'none' ? 'block' : 'none';
+            } else {
+                document.getElementById('adminLogin').classList.toggle('hidden');
+            }
+        }
+
+        function login() {
+            const password = document.getElementById('adminPassword').value;
+            const loginMessage = document.getElementById('loginMessage');
+            
+            if (password === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                document.getElementById('adminLogin').classList.add('hidden');
+                document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('adminPassword').value = '';
+                updatePersonList();
+            } else {
+                loginMessage.textContent = '❌ Incorrect password';
+                loginMessage.style.color = 'red';
+            }
+        }
+
+        function logout() {
+            isAdminLoggedIn = false;
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+
+        function addPerson() {
+            const name = document.getElementById('newName').value.toLowerCase().trim();
+            const emoji = document.getElementById('newEmoji').value.trim();
+            
+            if (name === '' || emoji === '') {
+                alert('Please enter both name and emoji');
+                return;
+            }
+            
+            perspectives[name] = emoji;
+            saveData();
+            updatePersonList();
+            
+            document.getElementById('newName').value = '';
+            document.getElementById('newEmoji').value = '';
+        }
+
+        function deletePerson(name) {
+            if (confirm(`Delete ${name}?`)) {
+                delete perspectives[name];
+                saveData();
+                updatePersonList();
+            }
+        }
+
+        function updatePersonList() {
+            const listDiv = document.getElementById('personList');
+            listDiv.innerHTML = '';
+            
+            for (const [name, emoji] of Object.entries(perspectives)) {
+                const item = document.createElement('div');
+                item.className = 'person-item';
+                item.innerHTML = `
+                    <span><strong>${name}</strong> → ${emoji}</span>
+                    <button class="delete-btn" onclick="deletePerson('${name}')">Delete</button>
+                `;
+                listDiv.appendChild(item);
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('nameInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') showEmoji();
+        });
+
+        document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+
+        // Load saved data on page load
+        loadData();
+    </script>
+</body>
+</html>
